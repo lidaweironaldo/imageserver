@@ -1,0 +1,53 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center"
+    android:orientation="vertical">	
+
+    <ImageView
+        android:id="@+id/lehigh_image"
+        android:layout_width="fill_parent"
+        android:layout_height="400dip"
+        android:contentDescription="@string/hello_lehigh"
+        android:scaleType="fitCenter"
+        android:src="@drawable/lehighcrest" >
+
+    </ImageView>
+    
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_gravity="center"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+		<Button
+		    android:id="@+id/camera_button"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="@string/camera" >
+
+		</Button>
+		<Button
+		    android:id="@+id/gallery_button"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="@string/gallery" >
+
+		</Button>
+		<Button
+		    android:id="@+id/retrieve_button"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:text="@string/retrieve" />
+
+	</LinearLayout>
+	<EditText 
+	    android:id="@+id/resultbox"
+	    android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:inputType="textMultiLine"
+		android:text="Packard Laboratory (1929)
+Named after James Ward Packard, one of the inventors of the first Packard automobile, this building is designed in the gothic style. It currently serves as the headquarters for the P.C. Rosin School of Engineering and Applied Sciences. Within the building are several large lecture halls, an exhibit of the first Packard automobile, and many laboratories."
+	/>
+</LinearLayout>
