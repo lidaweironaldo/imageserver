@@ -65,6 +65,59 @@ public class MainActivity extends Activity {
 	private int trigger = 0;
     public static Context context;
     FeatureDetector detector = null;
+   
+    double checkGreenRate(Mat img)
+    {
+    	double totalB1 =  0.0;
+    	double totalG1 = 0.0;
+    	double totalR1 = 0.0;
+    	double borr = 0.0;
+    	int count1 = 0;
+    	
+    	/*
+    	 * check all pixels
+    	for(int i =0; i<img.rows(); i++)
+    	{
+    		for(int j=0;j<img.cols(); j++)
+    		{
+    			count1++;
+    			totalB1+=img.get(i, j)[0];
+    			totalG1+=img.get(i, j)[1];
+    			totalR1+=img.get(i, j)[2];
+    		}
+    	}
+    	*/
+    	
+    	//check random 100 pixels
+    	count1=100;
+    	int row = img.rows();
+    	int col = img.cols();
+    	for (int i=0; i<100; i++)
+    	{
+    		Random random = new Random();
+    		int x = random.nextInt(row);
+    		int y = random.nextInt(col);
+			totalB1+=img.get(x, y)[0];
+			totalG1+=img.get(x, y)[1];
+			totalR1+=img.get(x, y)[2];
+    		//random = new Random();
+    	}
+    	
+    	if (totalB1>totalR1)
+    	{
+    		borr = totalB1;
+    	}
+    	else
+    	{
+    		borr = totalR1;
+    	}
+    	double avgG = totalG1/count1;
+    	double rate = ((avgG-borr/count1)/avgG);
+    	Log.d("green", String.valueOf(rate));
+    	
+    	//Log.d("", img[0]);
+    	return rate;
+    }
     
     boolean checkGreen(Mat img)
     {
@@ -117,7 +170,7 @@ public class MainActivity extends Activity {
     	
     	boolean result;
     	
-    	if (rate>0.13)
+    	if (rate>0.1)
     	{
     		result = true;
     	}
@@ -130,13 +183,83 @@ public class MainActivity extends Activity {
     	return result;
     }
     
+    int getMax(double a, double b, double c, double d)
+    {
+    	int p = 0;
+    	double temp;
+    	if(a>b)
+    	{
+    		temp = a;
+    		p = 1;
+    	}
+    	else
+    	{
+    		temp = b;
+    		p = 2;
+    	}
+    	
+    	if(temp<c)
+    	{
+    		temp = c;
+    		p = 3;
+    	}
+    	
+    	if(temp<d)
+    	{
+    		temp=d;
+    		p = 4;
+    	}
+    	if(temp>0.1)
+    	{
+    		return p;
+    	}
+    	else
+    	{
+    		return 0;
+    	}
+    }
+    
+    Mat solveGreenOrder(Mat img)
+    {
+    	Mat img1 = img.submat(0, (img.rows())/8, 0, img.cols());
+    	Mat img2 = img.submat((img.rows())*7/8,img.rows(), 0, img.cols());
+    	Mat img3 = img.submat(0, img.rows(), 0, (img.cols())/8);
+    	Mat img4 = img.submat(0, img.rows(),(img.cols())*7/8, img.cols());
+    	double rate1 = checkGreenRate(img1);
+    	double rate2 = checkGreenRate(img2);
+    	double rate3 = checkGreenRate(img3);
+    	double rate4 = checkGreenRate(img4);
+    	int pos = getMax(rate1, rate2, rate3, rate4);
+    	if(pos == 1)
+    	{
+    		img = img.submat((img.rows())/8, img.rows(),0,  img.cols());
+    		return solveGreenOrder(img);
+    	}
+    	if(pos == 2)
+    	{
+    		img = img.submat(0, (img.rows())*7/8, 0, img.cols());
+    		return solveGreenOrder(img);
+    	}
+    	if(pos == 3)
+    	{
+    		img = img.submat(0, img.rows(), (img.cols())/8, img.cols());
+    		return solveGreenOrder(img);
+    	}
+    	if(pos == 4)
+    	{
+    		img = img.submat(0, img.rows(),0,(img.cols())*7/8);
+    		return solveGreenOrder(img);
+    	}
+    	return img;
+    }
+    
     Mat solveGreen(Mat img)
     {	
     	Mat img1 = img.submat(0, (img.rows())/8, 0, img.cols());
     	if( checkGreen(img1) )
     	{
     		img = img.submat((img.rows())/8, img.rows(),0,  img.cols());
-    		return solveGreen(img);
+    		return solveGreen1(img);
     	}
     	else
     	{
@@ -144,7 +267,7 @@ public class MainActivity extends Activity {
     		if(checkGreen(img1))
     		{
     			img = img.submat((img.rows())/16, img.rows(),0,  img.cols());
-    			return solveGreen(img);
+    			return solveGreen1(img);
     		}
     	}
     	
@@ -152,7 +275,7 @@ public class MainActivity extends Activity {
     	if(checkGreen(img1))
     	{
     		img = img.submat(0, (img.rows())*7/8, 0, img.cols());
-    		return solveGreen(img);
+    		return solveGreen1(img);
     	}
     	else
     	{
@@ -160,11 +283,49 @@ public class MainActivity extends Activity {
     		if(checkGreen(img1))
     		{
     			img = img.submat(0, (img.rows())*15/16, 0, img.cols());
-    			return solveGreen(img);
+    			return solveGreen1(img);
     		}
     	}
     	
     	img1 = img.submat(0, img.rows(), 0, (img.cols())/8);
+    	if(checkGreen(img1))
+    	{
+    		img = img.submat(0, img.rows(), (img.cols())/8, img.cols());
+    		return solveGreen1(img);
+    	}
+    	else
+    	{
+    		img1 = img.submat(0, img.rows(), 0, (img.cols())/16);
+    		if(checkGreen(img1))
+    		{
+    			img = img.submat(0, img.rows(), (img.cols())/16, img.cols());
+    			return solveGreen1(img);
+    		}
+    	}
+    	
+    	img1 = img.submat(0, img.rows(),(img.cols())*7/8, img.cols());
+    	if(checkGreen(img1))
+    	{
+    		img = img.submat(0, img.rows(),0,(img.cols())*7/8);
+    		return solveGreen1(img);
+    	}
+    	else
+    	{
+    		img1 = img.submat(0, img.rows(),(img.cols())*15/16, img.cols());
+    		if(checkGreen(img1))
+    		{
+    			img = img.submat(0, img.rows(),0,(img.cols())*15/16);
+    			return solveGreen1(img);
+    		}
+    	}
+    	
+    	return img;
+    }
+    
+    Mat solveGreen1(Mat img)
+    {	
+    	
+    	Mat img1 = img.submat(0, img.rows(), 0, (img.cols())/8);
     	if(checkGreen(img1))
     	{
     		img = img.submat(0, img.rows(), (img.cols())/8, img.cols());
@@ -196,8 +357,41 @@ public class MainActivity extends Activity {
     		}
     	}
     	
+    	img1 = img.submat(0, (img.rows())/8, 0, img.cols());
+    	if( checkGreen(img1) )
+    	{
+    		img = img.submat((img.rows())/8, img.rows(),0,  img.cols());
+    		return solveGreen(img);
+    	}
+    	else
+    	{
+    		img1 = img.submat(0, (img.rows())/16, 0, img.cols());
+    		if(checkGreen(img1))
+    		{
+    			img = img.submat((img.rows())/16, img.rows(),0,  img.cols());
+    			return solveGreen(img);
+    		}
+    	}
+    	
+    	img1 = img.submat((img.rows())*7/8,img.rows(), 0, img.cols());
+    	if(checkGreen(img1))
+    	{
+    		img = img.submat(0, (img.rows())*7/8, 0, img.cols());
+    		return solveGreen(img);
+    	}
+    	else
+    	{
+    		img1 = img.submat((img.rows())*15/16, img.rows(), 0, img.cols());
+    		if(checkGreen(img1))
+    		{
+    			img = img.submat(0, (img.rows())*15/16, 0, img.cols());
+    			return solveGreen(img);
+    		}
+    	}
+    	
     	return img;
     }
+    
     
     private BaseLoaderCallback mOpenCVCallBack = new BaseLoaderCallback(this) {
     	@Override
@@ -256,9 +450,12 @@ public class MainActivity extends Activity {
     						Mat mImage = Highgui.imread(imagePath, 1);
     						//mImage = solveGreen(mImage);	
     						//Mat m1 = mImage[1:22,23:222];
-    						Size dsize = new Size(480, 640);
-    						Imgproc.resize(mImage, mImage, dsize);
-    						mImage = solveGreen(mImage);
+    						
+    						/*resize image*/
+    						//Size dsize = new Size(480, 640);
+    						//Imgproc.resize(mImage, mImage, dsize);
+    						
+    						mImage = solveGreenOrder(mImage);
     						String tempPath = "/mnt/sdcard/DCIM/Camera/lmr.jpg";
     						Highgui.imwrite(tempPath, mImage);
     						//MyFeatureDetector df = (MyFeatureDetector) FeatureDetector.create(FeatureDetector.SURF);
@@ -302,7 +499,7 @@ public class MainActivity extends Activity {
     							httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
     							HttpResponse response = httpclient.execute(httppost);
     							String the_string_response = convertResponseToString(response);
-    							resultText.setText(the_string_response);
+    							resultText.setText(imagePath+"\n\nResult:"+the_string_response);
     							long end = System.currentTimeMillis();
     							long time = end - start;
     							Log.d("time",  Long.toString(time));
